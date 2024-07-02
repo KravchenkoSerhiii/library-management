@@ -28,4 +28,4 @@ Environment Variables
 
 This project uses environment variables for configuration. Copy the .env.sample file to .env and update the values as necessary.
 
-cp .env.sample .env
+cp .env-sample .env
