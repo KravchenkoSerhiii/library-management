@@ -1,80 +1,32 @@
-from datetime import datetime
-from django.db import transaction
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from books.serializers import BookSerializer
-from borrowings.models import Borrowing
 
 
-class BorrowingSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Borrowing
+        model = get_user_model()
         fields = (
             "id",
-            "borrow_date",
-            "expected_return_date",
-            "actual_return_date",
-            "book_id",
-            "user_id",
+            "email",
+            "password",
+            "is_staff",
+            "username",
+            "first_name",
+            "last_name",
         )
+        read_only_fields = ("is_staff",)
+        extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
-
-class BorrowingDetailSerializer(serializers.ModelSerializer):
-    book = BookSerializer(many=False, read_only=True)
-
-    class Meta:
-        model = Borrowing
-        fields = (
-            "id",
-            "borrow_date",
-            "expected_return_date",
-            "actual_return_date",
-            "book",
-            "user",
-        )
-        read_only_fields = fields
-
-    def validate(self, attrs):
-        data = super(BorrowingDetailSerializer, self).validate(attrs=attrs)
-
-        if self.instance.actual_return_date:
-            raise serializers.ValidationError(
-                "This borrowing has already been returned."
-            )
-
-        return data
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        instance.actual_return_date = datetime.now().date()
-        instance.save()
-
-        book = instance.book
-        book.inventory += 1
-        book.save()
-
-        return instance
-
-
-class BorrowingCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Borrowing
-        fields = (
-            "id",
-            "borrow_date",
-            "expected_return_date",
-            "book",
-        )
-
-    def validate(self, attrs):
-        data = super(BorrowingCreateSerializer, self).validate(attrs=attrs)
-        Borrowing.validate_inventory(attrs["book"], ValidationError)
-        return data
-
-    @transaction.atomic
     def create(self, validated_data):
-        borrowing = Borrowing.objects.create(**validated_data)
-        book = validated_data.get("book")
-        book.inventory -= 1
-        book.save()
-        return borrowing
+        """Create a new user with encrypted password and return it"""
+        return get_user_model().objects.create_user(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Update a user, set the password correctly and return it"""
+        password = validated_data.pop("password", None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+
+        return user
