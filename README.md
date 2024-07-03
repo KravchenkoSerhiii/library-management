@@ -1,3 +1,18 @@
+Project description
+The project was created for library system management with the ability to track user borrowings
+
+Features
+
+- Ability to manage books in the library. 
+Adding to the library, editing information about the book, author and price for the book. 
+Only administrator can make changes to books, normal users can only read them.
+- User management capability. 
+Creation, modification of user data. The authentication method used is JWT token.
+- Borrowings Management. 
+It is possible to create borrowings for a specific user and 
+also it is possible to return the book and cancel borrowings. 
+
+
 Project Setup
 Clone the repository:
 
